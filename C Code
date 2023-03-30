@@ -1,0 +1,343 @@
+/**
+ * @file reversi.c
+ * @author <-- Aaryaman-->
+ * @date 2023-03-29
+ * 
+ */
+
+// DO NOT REMOVE THE FOLLOWING LINE
+#if !defined(TESTER_P1) && !defined(TESTER_P2)
+// DO NOT REMOVE THE ABOVE LINE
+#include "reversi.h"
+// DO NOT REMOVE THE FOLLOWING LINE
+#endif
+// DO NOT REMOVE THE ABOVE LINE
+
+#include <stdio.h>
+#include <stdlib.h>
+
+void printBoard(char board[][26], int n) {
+    printf("  ");
+    for (int i = 0; i < n; i++) { // For the abcd... label for the columns
+        printf("%c", 'a' + i);
+    }
+    printf("\n");
+    for (int i = 0; i < n; i++) {
+        printf("%c ", 'a' + i); // For the abcd... label for the rows
+        for (int j = 0; j < n; j++) {
+            printf("%c", board[i][j]);
+        }
+        printf("\n"); // after one row is iterated with different columns, the printing goes to the next row
+    }
+}
+
+bool positionInBounds(int n, int row, int col) {
+    if (row >= 0 && row < n && col >= 0 && col < n) { // checks if rows and columns are out of bounds
+    return true;
+    }
+    else {
+    return false;
+    }
+}
+
+bool checkLegalInDirection(char board[][26], int n, int row, int col,
+                           char colour, int deltaRow, int deltaCol) {
+    int nextRow = deltaRow + row; // over here deltarow and deltacol represents the direction of move
+    int nextCol = deltaCol + col;
+
+    if (!positionInBounds(n, nextRow, nextCol) || board[nextRow][nextCol] == colour || board[nextRow][nextCol] == 'U') { //this checks if rows and columns are in the grid and whether the element next to the desired direction is not U or the same color as the pieces
+        return false;
+    }    
+    while (nextRow >= 0 && nextRow < n && nextCol >= 0 && nextCol < n) { // it checks if there is any same color after the one right next in series so that it can assure that the middle peices will be flipped
+        if (board[nextRow][nextCol] == colour) {
+            return true;
+        }
+        if (board[nextRow][nextCol] == 'U') {
+            return false;
+        }
+        nextRow += deltaRow;
+        nextCol += deltaCol;
+    }
+    return false;
+}
+
+int makeMove(char board[26][26], int n, char turn, int *row, int *col) {
+
+    int rowisedirections[] = {-1, -1, -1, 0, 0, 1, 1, 1}; // places in such a order that all the 8 directions are covered
+    int columnwisedirection[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+
+    int maximumscore = -1; // we are taking maximum score as being -1 so that it can act as a starting reference
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (board[i][j] == 'U') {
+
+                int score = 0;
+
+                for (int z = 0; z < 8; z++) { // we take 8 beacuse from -1 to 1 in the grid matrix there is combination where there are 8 moves
+                    if (checkLegalInDirection(board, n, i, j, turn, rowisedirections[z], columnwisedirection[z])) {
+                        score++;
+                    }
+                }
+
+                if (score > 0) { // if score is greater than 0 then the maximum score would be replaced indication the number of direction where moves can be made
+                    if (score > maximumscore) {
+                        maximumscore = score;
+                        *row = i; // the row and col of the maximumscore would be updated indicating that in that move there would be the highest score played by the computer
+                        *col = j;
+                    }
+                }
+            }
+        }
+    }
+    return maximumscore;
+}
+
+void changindirection(char realboard[26][26], int n, char newc1, char newc2, char newc3) {
+          realboard[newc2 - 'a'][newc3 - 'a'] = newc1;
+        
+        int combination_of_directions[8][2] = 
+        { {1, 0}, {-1, 0}, {0, -1}, {0, 1},
+         {-1, 1}, {1, -1}, {-1, -1}, {1, 1} }; // all possible direction combination, 8 in each direction
+
+        int row, col;
+        for (int i = 0; i < 8; i++) {
+
+            int rownew = combination_of_directions[i][0];
+            int rowcol = combination_of_directions[i][1];
+
+            row = newc2 - 'a' + rownew;
+            col = newc3 - 'a' + rowcol;
+
+            while (row >= 0 && row < n && col >= 0 && col < n && realboard[row][col] != 'U') {
+
+                if (realboard[row][col] == newc1) {
+                    int r = newc2 - 'a', c = newc3 - 'a';
+                    while (r != row || c != col) {
+                        realboard[r][c] = newc1;
+                        r += rownew;
+                        c += rowcol;
+                    }
+                    break;
+                }
+                row += rownew;
+                col += rowcol;
+            }
+        }
+}
+//*******************************************************
+// Note: Please only put your main function below
+// DO NOT REMOVE THE FOLLOWING LINE
+#ifndef TESTER_P2
+// DO NOT REMOVE THE ABOVE LINE
+
+#include <stdio.h>
+#include <stdlib.h>
+int main(void) {
+  // Write your own main function here
+    int n;
+    printf("Enter the board dimension: ");
+    scanf("%d", &n);
+
+    int temp1 = (n / 2) - 1;
+    int temp2 = n / 2;
+    char realboard[n][26];
+
+    for (int i = 0; i < n; i++) { // filling the 2D array with the intial elements that are U, W, B
+        for (int j = 0; j < n; j++) {
+            realboard[i][j] = 'U';
+        }
+    }
+    // entering W & B
+    realboard[temp1][temp1] = 'W';
+    realboard[temp1][temp2] = 'B';
+    // entering W & B
+    realboard[temp2][temp2] = 'W';
+    realboard[temp2][temp1] = 'B';
+
+    char computer;
+    char user;
+    // INPUT WHAT COMPUTER PLAYS
+    printf("Computer plays (B/W): ");
+    scanf(" %c", &computer);
+
+    if(computer == 'B') { // if computer is B then user is W, or vice versa
+      user = 'W';
+    }
+    else {
+      user = 'B';
+    }
+    printBoard(realboard, n); // calling the printBoard function 
+
+    bool gamestatus = false; // for game status
+
+    bool userinvalid = false;  // for showing whether the option entered by user is invalid or not
+
+    bool compinvalid = false; // for showing whether the option entered by the computer is invalid or not
+
+    int count = 0; // have taken count and count1 beacuse it helps filtering out what to print in the end
+    int count1 = 0;
+
+    while (!gamestatus) {
+
+        if (computer == 'B') { // if computer is B
+
+            int row, col; // these are the row and column which will be updated by the function makemove, inorder to get the best place by computer inorder to get maximum points
+
+            int getscore = makeMove(realboard, n, computer, &row, &col); // getting the best possible rows and cols to make a move
+
+            if (getscore > 0) {
+                printf("Computer places %c at %c%c.\n", computer,'a'+row, 'a'+ col);
+                realboard[row][col] = computer;
+                changindirection(realboard, n, computer, 'a' + row, 'a' + col); // flipping the board
+                printBoard(realboard, n);
+                compinvalid = false;
+            } 
+            else {
+                compinvalid = true;
+                count++;
+                if(count == 2) {
+                    gamestatus = true;
+                }
+                else {
+                printf("%c player has no valid move.\n", computer);
+                }
+            }
+        } 
+        
+        else { // if user is B
+
+            char row1, col1;
+
+            printf("Enter move for colour %c (RowCol): ", user);
+            scanf(" %c%c", &row1, &col1);
+
+            int rowint = row1 - 'a';
+            int colint = col1 - 'a';
+
+            if (positionInBounds(n, rowint, colint) && realboard[rowint][colint] == 'U') {
+
+                bool legalmovecheck = false;
+
+                for (int deltaRow = -1; deltaRow <= 1; deltaRow++) {
+
+                    for (int deltaCol = -1; deltaCol <= 1; deltaCol++) {
+
+                        if (deltaRow != 0 || deltaCol != 0) {
+                            if (checkLegalInDirection(realboard, n, rowint, colint, user, deltaRow, deltaCol)) {
+                                legalmovecheck = true;
+                            }
+                        }
+                    }
+                }
+                if (legalmovecheck) {
+
+                    realboard[rowint][colint] = user;
+                    changindirection(realboard, n, user, 'a' + rowint, 'a' + colint);
+
+                    printBoard(realboard, n);
+
+                    userinvalid = false;
+
+                } else {
+                    printf("Invalid move.\n");
+
+                    gamestatus = true;
+                }
+            } 
+             else {
+                printf("Invalid move.\n");
+                gamestatus = true;
+             }
+            }
+
+
+            if (computer == 'W') { // if computer is W
+            int row, col;
+            int score = makeMove(realboard, n, computer, &row, &col);
+            if (score > 0) {
+                printf("Computer places %c at %c%c.\n", computer, 'a' + row, 'a' + col);
+                realboard[row][col] = computer;
+                changindirection(realboard, n, computer, 'a' + row, 'a' + col);
+                printBoard(realboard, n);
+                compinvalid = false;
+            } 
+            else {
+                compinvalid = true;
+                count1++;
+                if(count1 == 2) {
+                    gamestatus = true;
+                }
+                else {
+                printf("%c player has no valid move.\n", computer);
+                }
+
+            }
+        } 
+        else { // user is W
+            char rows, cols;
+            printf("Enter move for colour %c (RowCol): ", user);
+            scanf(" %c%c", &rows, &cols);
+            int row = rows - 'a';
+            int col = cols - 'a';
+
+            if (positionInBounds(n, row, col) && realboard[row][col] == 'U') {
+                bool legal = false;
+                for (int deltaRow = -1; deltaRow <= 1; deltaRow++) {
+                    for (int deltaCol = -1; deltaCol <= 1; deltaCol++) {
+                        if (deltaRow != 0 || deltaCol != 0) {
+                            if (checkLegalInDirection(realboard, n, row, col, user, deltaRow, deltaCol)) {
+                                legal = true;
+                            }
+                        }
+                    }
+                }
+                if (legal) {
+                    realboard[row][col] = user;
+                    changindirection(realboard, n, user, 'a' + row, 'a' + col);
+                    printBoard(realboard, n);
+                    userinvalid = false;
+                } 
+                else {
+                    printf("Invalid move.\n");
+                    gamestatus = true;
+                }
+            } 
+            else {
+                printf("Invalid move.\n");
+                gamestatus = true;
+            }
+        }
+        if (userinvalid && compinvalid) { // if it is a draw and both moves are invalid
+            gamestatus = true;
+        }
+        }
+
+        int bpeices = 0;
+        int wpeices = 0;
+        for (int i = 0; i < n; i++) {  // checking how many B or W peices are there on the board
+            for (int j = 0; j < n; j++) {
+                if (realboard[i][j] == 'B') {
+                    bpeices++;
+                } else if (realboard[i][j] == 'W') {
+                    wpeices++;
+                }
+            }
+        }
+        if (bpeices > wpeices) {
+            printf("B player wins.\n");
+        } 
+        else if (wpeices > bpeices) {
+            printf("W player wins.\n");
+        } 
+        else {
+            
+            printf("Draw!\n");
+        }
+  return 0;
+}
+
+// DO NOT REMOVE THE FOLLOWING LINE
+#endif
+// DO NOT REMOVE THE ABOVE LINE
+//*******************************************************
