@@ -1,2 +1,2 @@
 # C-Code-Othello-
-Reversi Game [AI Implementation]
+Reversi Game [AI Implementation] - Language: C
